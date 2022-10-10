@@ -42,18 +42,18 @@ import requests
 
 
 def home(request):
-   """
-   Send requests to / to the ember.js clientside app
-   """
-   return render_to_response('ember/index.html',
-               {}, RequestContext(request))
+    """
+    Send requests to / to the ember.js clientside app
+    """
+    return render_to_response('ember/index.html',
+{}, RequestContext(request))
 
 def xss_example(request):
-  """
-  Send requests to xss-example/ to the insecure client app
-  """
-  return render_to_response('dumb-test-app/index.html',
-              {}, RequestContext(request))
+    """
+    Send requests to xss-example/ to the insecure client app
+    """
+    return render_to_response('dumb-test-app/index.html',
+            {}, RequestContext(request))
 
 class Register(APIView):
     permission_classes = (AllowAny,)
@@ -61,7 +61,10 @@ class Register(APIView):
     def post(self, request, *args, **kwargs):
         # Login
         username = request.POST.get('username') #you need to apply validators to these
-        print username
+
+        print
+        username
+
         password = request.POST.get('password') #you need to apply validators to these
         email = request.POST.get('email') #you need to apply validators to these
         gender = request.POST.get('gender') #you need to apply validators to these
@@ -70,7 +73,8 @@ class Register(APIView):
         city = request.POST.get('city') #you need to apply validators to these
         state = request.POST.get('state') #you need to apply validators to these
 
-        print request.POST.get('username')
+        print
+        request.POST.get('username')
         if User.objects.filter(username=username).exists():
             return Response({'username': 'Username is taken.', 'status': 'error'})
         elif User.objects.filter(email=email).exists():
@@ -124,8 +128,95 @@ class Events(APIView):
     parser_classes = (parsers.JSONParser,parsers.FormParser)
     renderer_classes = (renderers.JSONRenderer, )
 
+    def get(self, request, format=None):
+        events = Event.objects.all()
+        json_data = serializers.serialize('json', events)
+        content = {'events': json_data}
+        return HttpResponse(json_data, content_type='json')
+
+    def post(self, request, *args, **kwargs):
+        print
+        'REQUEST DATA'
+
+        print
+        str(request.data)
+
+        eventtype = request.data.get('eventtype')
+        timestamp = int(request.data.get('timestamp'))
+        userid = request.data.get('userid')
+        requestor = request.META['REMOTE_ADDR']
+
+        newEvent = Event(
+            eventtype=eventtype,
+            timestamp=datetime.datetime.fromtimestamp(timestamp/1000, pytz.utc),
+            userid=userid,
+            requestor=requestor
+        )
+
+        try:
+            newEvent.clean_fields()
+        except ValidationError as e:
+            print
+            e
+            return Response({'success':False, 'error':e}, status=status.HTTP_400_BAD_REQUEST)
+
+        newEvent.save()
+        print
+        'New Event Logged from: ' + requestor
+        return Response({'success': True}, status=status.HTTP_200_OK)
+
 
 class ActivateIFTTT(APIView):
     permission_classes = (AllowAny,)
     parser_classes = (parsers.JSONParser,parsers.FormParser)
     renderer_classes = (renderers.JSONRenderer, )
+
+    def post(self,request):
+        print
+        'REQUEST DATA'
+        print
+        str(request.data)
+
+        eventtype = request.data.get('eventtype')
+        timestamp = int(request.data.get('timestamp'))
+        requestor = request.META['REMOTE_ADDR']
+        api_key = ApiKey.objects.all().first()
+        event_hook = "test"
+
+        print
+        "Creating New event"
+
+        newEvent = Event(
+            eventtype=eventtype,
+            timestamp=datetime.datetime.fromtimestamp(timestamp/1000, pytz.utc),
+            userid=str(api_key.owner),
+            requestor=requestor
+        )
+
+        print
+        newEvent
+        print
+        "Sending Device Event to IFTTT hook: " + str(event_hook)
+
+        #send the new event to IFTTT and print the result
+        event_req = requests.post('https://maker.ifttt.com/trigger/'+str(event_hook)+'/with/key/'+api_key.key, data= {
+            'value1' : timestamp,
+            'value2':  "\""+str(eventtype)+"\"",
+            'value3' : "\""+str(requestor)+"\""
+        })
+        print
+        event_req.text
+
+        #check that the event is safe to store in the databse
+        try:
+            newEvent.clean_fields()
+        except ValidationError as e:
+            print
+            e
+            return Response({'success':False, 'error':e}, status=status.HTTP_400_BAD_REQUEST)
+
+        #log the event in the DB
+        newEvent.save()
+        print
+        'New Event Logged'
+        return Response({'success': True}, status=status.HTTP_200_OK)
