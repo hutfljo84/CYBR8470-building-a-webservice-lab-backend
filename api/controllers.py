@@ -41,6 +41,7 @@ from django.core import serializers
 import requests
 
 
+
 def home(request):
     """
     Send requests to / to the ember.js clientside app
@@ -158,11 +159,13 @@ class Events(APIView):
         except ValidationError as e:
             print
             e
+
             return Response({'success':False, 'error':e}, status=status.HTTP_400_BAD_REQUEST)
 
         newEvent.save()
         print
         'New Event Logged from: ' + requestor
+
         return Response({'success': True}, status=status.HTTP_200_OK)
 
 
@@ -172,10 +175,8 @@ class ActivateIFTTT(APIView):
     renderer_classes = (renderers.JSONRenderer, )
 
     def post(self,request):
-        print
-        'REQUEST DATA'
-        print
-        str(request.data)
+        print 'REQUEST DATA'
+        print str(request.data)
 
         eventtype = request.data.get('eventtype')
         timestamp = int(request.data.get('timestamp'))
@@ -183,8 +184,7 @@ class ActivateIFTTT(APIView):
         api_key = ApiKey.objects.all().first()
         event_hook = "test"
 
-        print
-        "Creating New event"
+        print "Creating New event"
 
         newEvent = Event(
             eventtype=eventtype,
@@ -193,10 +193,8 @@ class ActivateIFTTT(APIView):
             requestor=requestor
         )
 
-        print
-        newEvent
-        print
-        "Sending Device Event to IFTTT hook: " + str(event_hook)
+        print newEvent
+        print "Sending Device Event to IFTTT hook: " + str(event_hook)
 
         #send the new event to IFTTT and print the result
         event_req = requests.post('https://maker.ifttt.com/trigger/'+str(event_hook)+'/with/key/'+api_key.key, data= {
@@ -204,19 +202,16 @@ class ActivateIFTTT(APIView):
             'value2':  "\""+str(eventtype)+"\"",
             'value3' : "\""+str(requestor)+"\""
         })
-        print
-        event_req.text
+        print event_req.text
 
         #check that the event is safe to store in the databse
         try:
             newEvent.clean_fields()
         except ValidationError as e:
-            print
-            e
+            print e
             return Response({'success':False, 'error':e}, status=status.HTTP_400_BAD_REQUEST)
 
         #log the event in the DB
         newEvent.save()
-        print
-        'New Event Logged'
+        print 'New Event Logged'
         return Response({'success': True}, status=status.HTTP_200_OK)

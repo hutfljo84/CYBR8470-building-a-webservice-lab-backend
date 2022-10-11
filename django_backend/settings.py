@@ -37,7 +37,7 @@ if ENVIRONMENT == 'PROD':
 else:
     DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.23', 'localhost']
+ALLOWED_HOSTS = ['192.168.1.23', 'localhost', 'django']
 
 
 # Application definition
