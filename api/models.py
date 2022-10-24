@@ -8,6 +8,9 @@ from django.contrib.auth.models import User, Group
 from django.contrib import admin
 import base64
 
+letterNumValidator = RegexValidator(regex="^[a-zA-Z0-9]+$")
+SpaceValidator = RegexValidator(regex="^[a-zA-Z0-9 ]+$")
+
 
 class Event(models.Model):
     eventtype = models.CharField(max_length=1000, blank=False)
@@ -35,23 +38,41 @@ class ApiKeyAdmin(admin.ModelAdmin):
     list_display = ("owner", "key")
 
 
+SIZE = {
+    ("Tiny", "Tiny"),
+    ("Small", "Small"),
+    ("Medium", "Medium"),
+    ("Large", "Large"),
+}
+
+
 class Breed(models.Model):
 
-    name = models.CharField(max_length=100, blank=False)
-    size = models.CharField(max_length=50, blank=False)
-    friendliness = models.IntegerField(blank=False)
-    trainability = models.IntegerField(blank=False)
-    shreddingamount = models.IntegerField(blank=False)
-    exerciseneeds = models.IntegerField(blank=False)
+    name = models.CharField(max_length=100, default="")
+    size = models.CharField(max_length=50, default="Small")
+    friendliness = models.IntegerField(
+        validators=[MaxValueValidator(5), MinValueValidator(1)], default=1
+    )
+    trainability = models.IntegerField(
+        validators=[MaxValueValidator(5), MinValueValidator(1)], default=1
+    )
+    shreddingamount = models.IntegerField(
+        validators=[MaxValueValidator(5), MinValueValidator(1)], default=1
+    )
+    exerciseneeds = models.IntegerField(
+        validators=[MaxValueValidator(5), MinValueValidator(1)], default=1
+    )
 
     def __str__(self):
         return str(self.name)
 
 
 class Dog(models.Model):
-    name = models.CharField(max_length=100, blank=False)
-    age = models.IntegerField()
-    breed = models.ForeignKey(Breed)
+    name = models.CharField(max_length=100, default="")
+    age = models.IntegerField(
+        validators=[MaxValueValidator(50), MinValueValidator(1)], default=0
+    )
+    breed = models.ForeignKey("Breed")
     gender = models.CharField(max_length=10, blank=False)
     color = models.CharField(max_length=50, blank=False)
     favoritefood = models.CharField(max_length=100, blank=False)
