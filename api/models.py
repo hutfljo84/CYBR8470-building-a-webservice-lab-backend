@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from unicodedata import name
 
 from django.db import models
 from django.core.validators import *
@@ -8,8 +9,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib import admin
 import base64
 
-letterNumValidator = RegexValidator(regex="^[a-zA-Z0-9]+$")
-SpaceValidator = RegexValidator(regex="^[a-zA-Z0-9 ]+$")
+# from numpy import size
 
 
 class Event(models.Model):
@@ -38,45 +38,40 @@ class ApiKeyAdmin(admin.ModelAdmin):
     list_display = ("owner", "key")
 
 
-SIZE = {
-    ("Tiny", "Tiny"),
-    ("Small", "Small"),
-    ("Medium", "Medium"),
-    ("Large", "Large"),
-}
-
-
+# Create your models here.
 class Breed(models.Model):
+    TINY = "Tiny"
+    SMALL = "Small"
+    MEDIUM = "Medium"
+    LARGE = "Large"
 
-    name = models.CharField(max_length=100, default="")
-    size = models.CharField(max_length=50, default="Small")
+    SIZE = (
+        (TINY, "Tiny"),
+        (SMALL, "Small"),
+        (MEDIUM, "Medium"),
+        (LARGE, "Large"),
+    )
+    name = models.CharField(max_length=100)
+    size = models.CharField(max_length=6, choices=SIZE, default=SMALL)
     friendliness = models.IntegerField(
-        validators=[MaxValueValidator(5), MinValueValidator(1)], default=1
+        default=3, validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     trainability = models.IntegerField(
-        validators=[MaxValueValidator(5), MinValueValidator(1)], default=1
+        default=3, validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
-    shreddingamount = models.IntegerField(
-        validators=[MaxValueValidator(5), MinValueValidator(1)], default=1
+    sheddingamount = models.IntegerField(
+        default=3, validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     exerciseneeds = models.IntegerField(
-        validators=[MaxValueValidator(5), MinValueValidator(1)], default=1
+        default=3, validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
-
-    def __str__(self):
-        return str(self.name)
 
 
 class Dog(models.Model):
-    name = models.CharField(max_length=100, default="")
-    age = models.IntegerField(
-        validators=[MaxValueValidator(50), MinValueValidator(1)], default=0
-    )
-    breed = models.ForeignKey("Breed")
-    gender = models.CharField(max_length=10, blank=False)
-    color = models.CharField(max_length=50, blank=False)
-    favoritefood = models.CharField(max_length=100, blank=False)
-    favoritetoy = models.CharField(max_length=100, blank=False)
-
-    def __str__(self):
-        return str(self.name)
+    name = models.CharField(max_length=100)
+    age = models.IntegerField(default=0)
+    breed = models.ForeignKey(Breed, on_delete=models.CASCADE)
+    gender = models.CharField(max_length=10)
+    color = models.CharField(max_length=20)
+    favoritefood = models.CharField(max_length=75)
+    favoritetoy = models.CharField(max_length=75)
